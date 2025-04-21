@@ -11,15 +11,14 @@ namespace D2L.Auth;
 
 public class Function
 {
-	//  cert password: pasSword1$
-	private const string clientId = "337aa9da-bc87-42b4-86b6-bc99c2160394";
-	private const string clientSecret = "AyLFJuL2ZfEN5dQxJtASmfyhf6yXPbXCIQQ2XIhWkFE";
-	private const string d2LHosted = "https://learn-stg.anzca.edu.au/";
-	private const string brightspaceBase = "https://auth.brightspace.com/";
-	private readonly string d2lAuth = $"oauth2/auth";
-	private readonly string d2lRefresh = $"core/connect/token";
-	private const string redirectUri = $"https://localhost:3001/callback";
-	private const string scope = "core:*:*";
+	private readonly string _clientId;
+	private readonly string _clientSecret;
+	private readonly string _d2LHosted;
+	private readonly string _brightspaceBaseUrl;
+	private readonly string _d2lAuthUri;
+	private readonly string _d2lRefreshUri;
+	private readonly string _redirectUri;
+	private readonly string _scope;
 	
 	
 	private readonly ILogger<Function> _logger;
@@ -27,6 +26,15 @@ public class Function
 	public Function(ILogger<Function> logger)
 	{
 		_logger = logger;
+
+	    _clientId = Environment.GetEnvironmentVariable("ClientId");
+	    _clientSecret = Environment.GetEnvironmentVariable("ClientSecret");
+	    _brightspaceBaseUrl = Environment.GetEnvironmentVariable("BrightspaceBaseUrl");
+	    _d2lAuthUri = Environment.GetEnvironmentVariable("AuthUri");
+	    _d2lRefreshUri = Environment.GetEnvironmentVariable("RefreshUri");
+	    _scope = Environment.GetEnvironmentVariable("Scope");
+	    _d2LHosted = Environment.GetEnvironmentVariable("D2LHosted");
+	    _redirectUri = Environment.GetEnvironmentVariable("RedirectUri");
 	}
 
 	/// <summary>
@@ -39,11 +47,11 @@ public class Function
 	{
 		// https://learn-stg.anzca.edu.au/d2l/lp/extensibility/oauth2
 		//var authUrl = $"{d2LHosted}d2l/auth/api/token?client_id={clientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code";
-		var authUrl = $"{brightspaceBase}{d2lAuth}" +
-		              $"?client_id={clientId}" +
-		              $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+		var authUrl = $"{_brightspaceBaseUrl}{_d2lAuthUri}" +
+		              $"?client_id={_clientId}" +
+		              $"&redirect_uri={Uri.EscapeDataString(_redirectUri)}" +
 		              $"&response_type=code" +
-		              $"&scope={Uri.EscapeDataString(scope)}";
+		              $"&scope={Uri.EscapeDataString(_scope)}";
 		
 		_logger.LogInformation($"Auth URL: {authUrl}");
 		
@@ -68,18 +76,18 @@ public class Function
 		_logger.LogInformation($"Code: {code}");
 		
 		using var client = new HttpClient();
-		client.BaseAddress = new Uri(brightspaceBase);
+		client.BaseAddress = new Uri(_brightspaceBaseUrl);
 		
 		var requestBody = new FormUrlEncodedContent(new[]
 		{
 			new KeyValuePair<string, string>("grant_type", "authorization_code"),
 			new KeyValuePair<string, string>("code", code),
-			new KeyValuePair<string, string>("client_id", clientId),
-			new KeyValuePair<string, string>("client_secret", clientSecret),
-			new KeyValuePair<string, string>("redirect_uri", redirectUri),
+			new KeyValuePair<string, string>("client_id", _clientId),
+			new KeyValuePair<string, string>("client_secret", _clientSecret),
+			new KeyValuePair<string, string>("redirect_uri", _redirectUri),
 		});
 		
-		var response = await client.PostAsync(d2lRefresh, requestBody);
+		var response = await client.PostAsync(_d2lRefreshUri, requestBody);
 		if (!response.IsSuccessStatusCode)
 		{
 			var error = await response.Content.ReadAsStringAsync();
