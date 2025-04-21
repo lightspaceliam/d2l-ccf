@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "D2L.Auth": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 3001 --https true",
+      "launchBrowser": false
+    }
+  }
+}
